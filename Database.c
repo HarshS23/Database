@@ -94,7 +94,6 @@ void read_input(InputBuffer* input_buffer){
         printf("FAILURE ERROR READING INPUT\n"); 
         exit(EXIT_FAILURE);
     }
-
     input_buffer->input_length = read_bytes - 1; 
     input_buffer->buffer[read_bytes - 1] = 0; 
 }
@@ -116,6 +115,7 @@ int main(int argc, char* argv[]){
 
         if(strcmp(input_buffer->buffer, ".exit") == 0){
             close_input_buffer(input_buffer);
+            exit(EXIT_SUCCESS);
         }
         
 
@@ -143,7 +143,7 @@ int main(int argc, char* argv[]){
         }
 
         execute_statement(&statement); 
-        printf("The statment has been exectued\n");
+        printf("Exectued\n");
 
     }
 }
