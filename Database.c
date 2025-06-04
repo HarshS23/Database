@@ -68,9 +68,17 @@ const uint32_t EMAIL_OFFSET = USERNAME_OFFSET + USERNAME_SIZE;
 const uint32_t ROW_SIZE = ID_SIZE + USERNAME_SIZE + EMAIL_SIZE; 
 
 void serialize_row(Row* source, void* destination){
-    void;
+    memcpy(destination + ID_OFFSET, &(source->id), ID_SIZE);
+    memcpy(destination + USERNAME_OFFSET, &(source->username), USERNAME_SIZE); 
+    memcpy(destination + EMAIL_OFFSET, &(source->email), EMAIL_SIZE);
+
 }
 
+void deserialize_row(void* source, Row* destination){
+    memcpy(&(destination->id), destination + ID_OFFSET, ID_SIZE);
+    memcpy(&(destination->username), destination + USERNAME_OFFSET, USERNAME_SIZE); 
+    memcpy(&(destination->email), destination + EMAIL_OFFSET, EMAIL_SIZE); 
+}
 
 
 
