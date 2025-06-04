@@ -26,7 +26,7 @@ typedef enum {
 
 }MetaCommandResult;
 
-typedef enum {PREPARE_SUCCESS, PREPARE_UNRECOGNIZED_STATMENT}PrepareResult; 
+typedef enum {PREPARE_SUCCESS, PREPARE_UNRECOGNIZED_STATMENT, PREPARE_SYNTAX_ERROR}PrepareResult; 
 
 typedef enum {STATEMENT_INSERT, STATEMENT_SELECT}StatementType;
 
@@ -149,18 +149,7 @@ PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement)
 
 }
 
-// void execute_statement(Statement* statement){
-//     switch(statement->type){
-//         case (STATEMENT_INSERT):
-//             printf("This is where we do an Insert \n");
-//             break;
-//         case (STATEMENT_SELECT):
-//             printf("This is where we do an select \n");
-//             break;
-//     }
-// }
-
-ExecuteResult execture_insert(Statement* statement, Table* table){
+ExecuteResult execute_insert(Statement* statement, Table* table){
     if (table->num_rows >= TABLE_MAX_ROWS){
         return EXECUTE_TABLE_FULL;
     }
@@ -171,6 +160,47 @@ ExecuteResult execture_insert(Statement* statement, Table* table){
 
     return EXECUTE_SUCCESS;
 }
+
+ExecuteResult execute_select(Statement* statement, Table* table){
+    Row row; 
+
+    for(uint32_t i = 0; i < table->num_rows; i++){
+        deserialize_row(row_slot(table, i), &row);
+        print_row(&row);
+    }
+
+    return EXECUTE_SUCCESS; 
+}
+
+ExecuteResult execute_statement(Statement* statement, Table* table){
+    switch(statement->type){
+        case (STATEMENT_INSERT):
+            return execute_insert(statement, table);
+        case (STATEMENT_SELECT):
+            return execute_select(statement, table); 
+    }
+}
+
+// lastly we need to initlize the table and free the memory 
+
+Table* new_table(){
+    Table* table = (Table*)malloc(sizeof(Table)); 
+    table->num_rows = 0; 
+    for(uint32_t i = 0; i < TABLE_MAX_PAGES; i++){
+        table->pages[i] = NULL;
+    }
+    return table; 
+}
+
+// freeing the table from memory 
+void free_table(Table* table){
+    for(int i = 0; table->pages[i]; i++){
+        free(table->pages[i]);
+    }
+    free(table); 
+}
+
+
 
 
 // defining the print prompt 
@@ -199,6 +229,8 @@ void close_input_buffer(InputBuffer* input_buffer){
 
 // Main function 
 int main(int argc, char* argv[]){
+
+    Table* table = new_table();
 
     InputBuffer* input_buffer = new_input_buffer();
 
@@ -230,13 +262,23 @@ int main(int argc, char* argv[]){
         switch(prepare_statement(input_buffer, &statement)){
             case (PREPARE_SUCCESS):
                 break; 
+            case (PREPARE_SYNTAX_ERROR):
+                continue;
+                printf("Syntax Error, could not parse command\n");
             case (PREPARE_UNRECOGNIZED_STATMENT):
                 printf("Unrecognized Keyword at the start of '%s' . \n",input_buffer->buffer); 
                 continue;
         }
 
-        execute_statement(&statement); 
-        printf("Exectued\n");
+        // execute_statement(&statement);
+        switch (execute_statement(&statement, table)){
+            case(EXECUTE_SUCCESS):
+                printf("Executed\n");
+                break; 
+            case(EXECUTE_TABLE_FULL):
+                printf("Error: Table Full\n");
+                break;
+        }
 
     }
 }
