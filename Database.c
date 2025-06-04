@@ -82,6 +82,10 @@ typedef struct{
     void* pages[TABLE_MAX_PAGES];
 }Table;
 
+void print_row(Row* row){
+    printf("(%d %s %s)\n", row->id, row->username, row->email); 
+}
+
 
 void serialize_row(Row* source, void* destination){
     memcpy(destination + ID_OFFSET, &(source->id), ID_SIZE);
