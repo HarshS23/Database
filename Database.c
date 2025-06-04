@@ -30,6 +30,8 @@ typedef enum {PREPARE_SUCCESS, PREPARE_UNRECOGNIZED_STATMENT}PrepareResult;
 
 typedef enum {STATEMENT_INSERT, STATEMENT_SELECT}StatementType;
 
+typedef enum {EXECUTE_SUCCESS , EXECUTE_TABLE_FULL}ExecuteResult; 
+
 #define COLUMN_USERNAME_SIZE 32
 #define COLUMN_EMAIL_SIZE 255
 typedef struct {
@@ -54,8 +56,7 @@ plan
     - Keep a fixed size array of pointers to pages
 
 */
-
-// this is a testing push 
+ 
 
 #define size_of_attribute(Struct, Attribute) sizeof(((Struct*)0)->Attribute)
 
@@ -66,6 +67,21 @@ const uint32_t ID_OFFSET = 0;
 const uint32_t USERNAME_OFFSET = ID_OFFSET + ID_SIZE;
 const uint32_t EMAIL_OFFSET = USERNAME_OFFSET + USERNAME_SIZE; 
 const uint32_t ROW_SIZE = ID_SIZE + USERNAME_SIZE + EMAIL_SIZE; 
+
+// table structure that points to pages of rows and keeps track of how many rows there are 
+// we make the page 4 kilobytes and for one page in our database means its one page in our operating systems 
+// This also means that when the operating system moves the pages in and out of memeory it moves whole units 
+// rather than in bits this ensures 
+#define TABLE_MAX_PAGES 100
+const uint32_t PAGE_SIZE = 4096; 
+const uint32_t ROWS_PER_PAGE = PAGE_SIZE / ROW_SIZE; 
+const uint32_t TABLE_MAX_ROWS = ROWS_PER_PAGE * TABLE_MAX_PAGES;
+
+typedef struct{
+    uint32_t num_rows; 
+    void* pages[TABLE_MAX_PAGES];
+}Table;
+
 
 void serialize_row(Row* source, void* destination){
     memcpy(destination + ID_OFFSET, &(source->id), ID_SIZE);
@@ -80,10 +96,19 @@ void deserialize_row(void* source, Row* destination){
     memcpy(&(destination->email), destination + EMAIL_OFFSET, EMAIL_SIZE); 
 }
 
-
-
-
-
+// row slots: reading and writing into memory for a particular row 
+void* row_slot(Table* table, uint32_t row_num){
+    uint32_t page_num = row_num / ROWS_PER_PAGE; 
+    void* page = table->pages[page_num]; 
+    
+    if (page == NULL){
+        // allocate memory only when we try to access pages
+        page = table->pages[page_num] = malloc(PAGE_SIZE);
+    }
+    uint32_t row_offset = row_offset % ROWS_PER_PAGE;
+    uint32_t byte_offset = row_offset * ROW_SIZE;
+    return page + byte_offset; 
+}
 
 
 // defining the input buffer 
@@ -124,15 +149,27 @@ PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement)
 
 }
 
-void execute_statement(Statement* statement){
-    switch(statement->type){
-        case (STATEMENT_INSERT):
-            printf("This is where we do an Insert \n");
-            break;
-        case (STATEMENT_SELECT):
-            printf("This is where we do an select \n");
-            break;
+// void execute_statement(Statement* statement){
+//     switch(statement->type){
+//         case (STATEMENT_INSERT):
+//             printf("This is where we do an Insert \n");
+//             break;
+//         case (STATEMENT_SELECT):
+//             printf("This is where we do an select \n");
+//             break;
+//     }
+// }
+
+ExecuteResult execture_insert(Statement* statement, Table* table){
+    if (table->num_rows >= TABLE_MAX_ROWS){
+        return EXECUTE_TABLE_FULL;
     }
+
+    Row* row_to_insert = &(statement->row_to_insert); 
+    serialize_row(row_to_insert, row_slot(table, table->num_rows)); 
+    table->num_rows += 1; 
+
+    return EXECUTE_SUCCESS;
 }
 
 
