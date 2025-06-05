@@ -26,7 +26,14 @@ typedef enum {
 
 }MetaCommandResult;
 
-typedef enum {PREPARE_SUCCESS, PREPARE_UNRECOGNIZED_STATMENT, PREPARE_SYNTAX_ERROR, PREPARE_STRING_TOO_LONG}PrepareResult; 
+typedef enum {
+    PREPARE_SUCCESS,
+    PREPARE_NEGATIVE_ID,
+    PREPARE_STRING_TOO_LONG,
+    PREPARE_UNRECOGNIZED_STATMENT,
+    PREPARE_SYNTAX_ERROR
+}PrepareResult; 
+
 
 typedef enum {STATEMENT_INSERT, STATEMENT_SELECT}StatementType;
 
@@ -168,6 +175,9 @@ PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement){
     }
 
     int id = atoi(id_string); // atoi() converts a string into an interger 
+    if (id < 0){
+        return PREPARE_NEGATIVE_ID;
+    }
     if (strlen(username) > COLUMN_USERNAME_SIZE){
         return PREPARE_STRING_TOO_LONG;
     }
@@ -297,6 +307,12 @@ int main(int argc, char* argv[]){
         switch(prepare_statement(input_buffer, &statement)){
             case (PREPARE_SUCCESS):
                 break; 
+            case (PREPARE_NEGATIVE_ID):
+                printf("ID must be postive\n");
+                continue;
+            case (PREPARE_STRING_TOO_LONG):
+                printf("This string is too long\n"); 
+                continue;
             case (PREPARE_SYNTAX_ERROR):
                 continue;
                 printf("Syntax Error, could not parse command\n");
