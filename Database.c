@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <stdint.h>
 
 /*
 Right now we are making a simple REPL 
@@ -107,10 +107,10 @@ void serialize_row(Row* source, void* destination){
 
 }
 
-void deserialize_row(void* source, Row* destination){
-    memcpy(&(destination->id), destination + ID_OFFSET, ID_SIZE);
-    memcpy(&(destination->username), destination + USERNAME_OFFSET, USERNAME_SIZE); 
-    memcpy(&(destination->email), destination + EMAIL_OFFSET, EMAIL_SIZE); 
+void deserialize_row(void *source, Row* destination){
+    memcpy(&(destination->id), source + ID_OFFSET, ID_SIZE);
+    memcpy(&(destination->username), source + USERNAME_OFFSET, USERNAME_SIZE); 
+    memcpy(&(destination->email), source + EMAIL_OFFSET, EMAIL_SIZE); 
 }
 
 // row slots: reading and writing into memory for a particular row 
