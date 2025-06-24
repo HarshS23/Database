@@ -20,6 +20,13 @@ typedef struct{
 
 }InputBuffer;
 
+typedef struct{
+    int file_discriptor;
+    uint32_t file_lenght; 
+    void* pages[TABLE_MAX_PAGES];
+}Pager;
+
+
 typedef enum {
     META_COMMAND_SUCCESS,
     META_COMMAND_UNRECOGNIZED_COMMAND
